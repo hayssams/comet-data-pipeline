@@ -121,6 +121,10 @@ object Dependencies {
     "org.apache.hadoop" % "hadoop-client" % Versions.hadoop % "provided" excludeAll (jacksonExclusions: _*)
   )
 
-  val dependencies = logging ++ typedConfigs ++ okhttp ++ betterfiles ++ jackson ++ scalaTest ++ scopt ++ hadoop ++ esHadoop ++ sttp ++ gcp ++ azure // ++ atlas
+  val excelClientApi = Seq(
+    "org.apache.poi" % "poi-ooxml" % Versions.poi
+  )
+
+  val dependencies = logging ++ typedConfigs ++ okhttp ++ betterfiles ++ jackson ++ scalaTest ++ scopt ++ hadoop ++ esHadoop ++ sttp ++ gcp ++ azure ++ excelClientApi // ++ atlas
 
 }
