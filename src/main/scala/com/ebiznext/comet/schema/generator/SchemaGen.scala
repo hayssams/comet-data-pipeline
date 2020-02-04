@@ -4,17 +4,17 @@ import java.io.File
 import java.util.regex.Pattern
 
 import com.ebiznext.comet.schema.model._
-import com.typesafe.scalalogging.StrictLogging
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.poi.ss.usermodel.{DataFormatter, Row, Workbook, WorkbookFactory}
 
 import scala.collection.JavaConverters._
 import scala.util.{Success, Try}
 
-object SchemaGen extends App with StrictLogging {
+object SchemaGen extends App with LazyLogging {
 
   def printUsage(): Unit = {
     println("""
-        |Usage: SchemaGen <excel source file>
+        |Usage: SchemaGen <Excel file>
         |""".stripMargin)
   }
 
@@ -26,7 +26,7 @@ object SchemaGen extends App with StrictLogging {
     import YamlSerializer._
     reader.domain.foreach { d =>
       val domain = d.copy(schemas = listSchemas)
-      println(s"""Domain schemas:
+      logger.info(s"""Generated schemas:
            |${serialize(domain)}""".stripMargin)
       serializeToFile(new File(s"${domain.name}.yml"), domain)
     }
@@ -92,24 +92,29 @@ class XlsReader(path: String) {
           .map(_.toBoolean)
         val separator = Option(row.getCell(6, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
           .map(formatter.formatCellValue)
+
+        // FIXME handle quote and escape fields
+        val quote = Option(row.getCell(7, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+          .map(formatter.formatCellValue)
+        val escape = Option(row.getCell(8, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+          .map(formatter.formatCellValue)
+
         (nameOpt, patternOpt) match {
           case (Some(name), Some(pattern)) => {
-            val quote = Some("\"") //TODO necessary ??
-            val escape = Some("\\") // TODO necessary ??
             val metaData = Metadata(
               mode,
               format,
-              None,
-              None,
-              None,
+              encoding = None,
+              multiline = None,
+              array = None,
               withHeader,
               separator,
               quote,
               escape,
               write,
-              None,
-              None,
-              None
+              partition = None,
+              index = None,
+              properties = None
             )
             Some(Schema(name, pattern, attributes = Nil, Some(metaData), None, None, None, None))
           }
@@ -119,7 +124,6 @@ class XlsReader(path: String) {
       .toList
   }
 
-  // TODO vérifier le premier attribut positionnel et poser un flag indiquant si la première position commence par 0 ou 1 et instancier Position en conséquence
   def buildSchemas(): List[Schema] = {
     schemas.map { schema =>
       val schemaName = schema.name
@@ -131,7 +135,7 @@ class XlsReader(path: String) {
           val nameOpt = Option(row.getCell(0, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
             .map(formatter.formatCellValue)
           val renameOpt = Option(row.getCell(1, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
-            .map(formatter.formatCellValue) // TODO
+            .map(formatter.formatCellValue)
           val semTypeOpt = Option(row.getCell(2, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
             .map(formatter.formatCellValue)
           val requiredOpt = Option(row.getCell(3, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
@@ -143,10 +147,10 @@ class XlsReader(path: String) {
           val metricType = Option(row.getCell(5, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
             .map(formatter.formatCellValue)
             .map(MetricType.fromString)
-
-          // TODO 6 = valeur par defaut
-          // TODO 8 = description
-
+          val defaultOpt = Option(row.getCell(6, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+            .map(formatter.formatCellValue)
+          val commentOpt = Option(row.getCell(8, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+            .map(formatter.formatCellValue)
           val positionStart = Try(row.getCell(9, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
             .map(formatter.formatCellValue)
             .map(_.toInt) match {
@@ -169,11 +173,16 @@ class XlsReader(path: String) {
                 Attribute(
                   name,
                   semType,
-                  None,
+                  array = None,
                   required,
                   privacy,
+                  comment = commentOpt,
+                  rename = renameOpt,
+                  metricType = metricType,
+                  attributes = None,
                   position = Some(Position(positionStart, positionEnd, positionTrim)),
-                  metricType = metricType
+                  default = defaultOpt,
+                  tags = None
                 )
               )
             case _ => None

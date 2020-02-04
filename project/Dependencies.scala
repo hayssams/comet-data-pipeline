@@ -49,7 +49,8 @@ object Dependencies {
     "com.fasterxml.jackson.core" % "jackson-annotations" % Versions.jackson,
     "com.fasterxml.jackson.core" % "jackson-databind" % Versions.jackson,
     "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jackson,
-    "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % Versions.jackson
+    "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % Versions.jackson,
+    "org.yaml" % "snakeyaml" % Versions.snakeyaml
   )
 
   val spark211 = Seq(

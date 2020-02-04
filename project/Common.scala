@@ -107,7 +107,7 @@ object Versions {
   val hive = "3.1.0"
   val log4s = "1.3.3"
   val betterFiles = "3.6.0"
-  val jackson = "2.7.9"
+  val jackson = "2.10.2"
   val configs = "0.4.4"
   val esHadoop = "7.5.1"
   val scopt = "4.0.0-RC2"
@@ -118,6 +118,7 @@ object Versions {
   val bq = "1.103.0"
   val hadoop = "3.2.0"
   val poi = "4.1.1"
+  val snakeyaml = "1.25"
 }
 
 object Resolvers {
