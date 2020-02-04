@@ -4,12 +4,45 @@ import java.io.File
 import java.util.regex.Pattern
 
 import com.ebiznext.comet.schema.model._
+import com.typesafe.scalalogging.StrictLogging
 import org.apache.poi.ss.usermodel.{DataFormatter, Row, Workbook, WorkbookFactory}
 
 import scala.collection.JavaConverters._
 import scala.util.{Success, Try}
 
-object GenerateSchema {}
+object SchemaGen extends App with StrictLogging {
+
+  def printUsage(): Unit = {
+    println("""
+        |Usage: SchemaGen <excel source file>
+        |""".stripMargin)
+  }
+
+  def execute(path: String): Unit = {
+    val reader = new XlsReader(path)
+
+    val listSchemas = reader.buildSchemas()
+
+    import YamlSerializer._
+    reader.domain.foreach { d =>
+      val domain = d.copy(schemas = listSchemas)
+      println(s"""Domain schemas:
+           |${serialize(domain)}""".stripMargin)
+      serializeToFile(new File(s"${domain.name}.yml"), domain)
+    }
+  }
+
+  if (args.isEmpty) printUsage()
+  else {
+    logger.info("Start yaml schema generation")
+
+    val inputFile = args.headOption
+    inputFile match {
+      case Some(path) => execute(path)
+      case None       => printUsage()
+    }
+  }
+}
 
 class XlsReader(path: String) {
 
@@ -33,6 +66,7 @@ class XlsReader(path: String) {
       }
     }
   }
+
   lazy val schemas: List[Schema] = {
     workbook
       .getSheet("schemas")
@@ -97,7 +131,7 @@ class XlsReader(path: String) {
           val nameOpt = Option(row.getCell(0, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
             .map(formatter.formatCellValue)
           val renameOpt = Option(row.getCell(1, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
-            .map(formatter.formatCellValue)
+            .map(formatter.formatCellValue) // TODO
           val semTypeOpt = Option(row.getCell(2, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
             .map(formatter.formatCellValue)
           val requiredOpt = Option(row.getCell(3, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
@@ -110,19 +144,22 @@ class XlsReader(path: String) {
             .map(formatter.formatCellValue)
             .map(MetricType.fromString)
 
-          val positionStart = Try(row.getCell(6, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+          // TODO 6 = valeur par defaut
+          // TODO 8 = description
+
+          val positionStart = Try(row.getCell(9, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
             .map(formatter.formatCellValue)
             .map(_.toInt) match {
             case Success(v) => v
             case _          => 0
           }
-          val positionEnd = Try(row.getCell(7, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+          val positionEnd = Try(row.getCell(10, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
             .map(formatter.formatCellValue)
             .map(_.toInt) match {
             case Success(v) => v
             case _          => 0
           }
-          val positionTrim = Option(row.getCell(8, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+          val positionTrim = Option(row.getCell(11, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
             .map(formatter.formatCellValue)
             .map(Trim.fromString)
 
@@ -145,18 +182,5 @@ class XlsReader(path: String) {
         .toList
       schema.copy(attributes = attributes)
     }
-  }
-}
-
-object ExcelReaderTest extends App {
-  val reader = new XlsReader("data/DomainReferentiel.xlsx")
-
-  val listSchemas = reader.buildSchemas()
-
-  import YamlSerializer._
-  reader.domain.foreach { d =>
-    val domain = d.copy(schemas = listSchemas)
-    println(s"Domain schemas:\r\n ${serialize(domain)}")
-    serializeToFile(new File(s"data/${domain.name}.yml"), domain)
   }
 }
