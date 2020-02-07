@@ -11,7 +11,7 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 object YamlSerializer {
   val mapper: ObjectMapper = new ObjectMapper(new YAMLFactory())
   mapper.registerModule(DefaultScalaModule)
-  mapper.setSerializationInclusion(Include.NON_NULL)
+  mapper.setSerializationInclusion(Include.NON_EMPTY)
 
   def serialize(domain: Domain): String = mapper.writeValueAsString(domain)
 
