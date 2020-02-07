@@ -151,21 +151,29 @@ class XlsReader(path: String) {
             .map(formatter.formatCellValue)
           val commentOpt = Option(row.getCell(8, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
             .map(formatter.formatCellValue)
-          val positionStart = Try(row.getCell(9, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
-            .map(formatter.formatCellValue)
-            .map(_.toInt) match {
-            case Success(v) => v
-            case _          => 0
+
+          val positionOpt = schema.metadata.flatMap(_.format) match {
+            case Some(Format.POSITION) => {
+              val positionStart = Try(row.getCell(9, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+                .map(formatter.formatCellValue)
+                .map(_.toInt) match {
+                case Success(v) => v
+                case _          => 0
+              }
+              val positionEnd = Try(row.getCell(10, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+                .map(formatter.formatCellValue)
+                .map(_.toInt) match {
+                case Success(v) => v
+                case _          => 0
+              }
+              val positionTrim = Option(row.getCell(11, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+                .map(formatter.formatCellValue)
+                .map(Trim.fromString)
+              Some(Position(positionStart, positionEnd, positionTrim))
+            }
+            case _ => None
           }
-          val positionEnd = Try(row.getCell(10, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
-            .map(formatter.formatCellValue)
-            .map(_.toInt) match {
-            case Success(v) => v
-            case _          => 0
-          }
-          val positionTrim = Option(row.getCell(11, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
-            .map(formatter.formatCellValue)
-            .map(Trim.fromString)
+
 
           (nameOpt, semTypeOpt, requiredOpt) match {
             case (Some(name), Some(semType), Some(required)) =>
@@ -180,7 +188,7 @@ class XlsReader(path: String) {
                   rename = renameOpt,
                   metricType = metricType,
                   attributes = None,
-                  position = Some(Position(positionStart, positionEnd, positionTrim)),
+                  position = positionOpt,
                   default = defaultOpt,
                   tags = None
                 )
