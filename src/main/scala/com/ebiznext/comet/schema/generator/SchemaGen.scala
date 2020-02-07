@@ -138,9 +138,9 @@ class XlsReader(path: String) {
             .map(formatter.formatCellValue)
           val semTypeOpt = Option(row.getCell(2, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
             .map(formatter.formatCellValue)
-          val requiredOpt = Option(row.getCell(3, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+          val required = Option(row.getCell(3, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
             .map(formatter.formatCellValue)
-            .map(_.toBoolean)
+            .forall(_.toBoolean)
           val privacy = Option(row.getCell(4, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
             .map(formatter.formatCellValue)
             .map(PrivacyLevel.fromString)
@@ -174,9 +174,8 @@ class XlsReader(path: String) {
             case _ => None
           }
 
-
-          (nameOpt, semTypeOpt, requiredOpt) match {
-            case (Some(name), Some(semType), Some(required)) =>
+          (nameOpt, semTypeOpt) match {
+            case (Some(name), Some(semType)) =>
               Some(
                 Attribute(
                   name,
