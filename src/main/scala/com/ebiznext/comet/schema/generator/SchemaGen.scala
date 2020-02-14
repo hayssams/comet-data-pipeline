@@ -22,13 +22,19 @@ object SchemaGen extends App with LazyLogging {
     val reader = new XlsReader(path)
 
     val listSchemas = reader.buildSchemas()
-
+    val encryptedSchemas = listSchemas.flatMap(PostEncryptSchemaGen.buildPostEncryptionSchema)
     import YamlSerializer._
     reader.domain.foreach { d =>
       val domain = d.copy(schemas = listSchemas)
       logger.info(s"""Generated schemas:
            |${serialize(domain)}""".stripMargin)
       serializeToFile(new File(s"${domain.name}.yml"), domain)
+      if(encryptedSchemas.nonEmpty){
+        val encryptedDomain = d.copy(schemas = encryptedSchemas)
+        serializeToFile(new File(s"${encryptedDomain.name}-encrypted.yml"), encryptedDomain)
+      }
+
+
     }
   }
 
