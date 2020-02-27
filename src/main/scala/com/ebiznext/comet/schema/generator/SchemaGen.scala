@@ -3,6 +3,7 @@ package com.ebiznext.comet.schema.generator
 import java.io.File
 import java.util.regex.Pattern
 
+import com.ebiznext.comet.config.Settings
 import com.ebiznext.comet.schema.model._
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.poi.ss.usermodel.{DataFormatter, Row, Workbook, WorkbookFactory}
@@ -21,19 +22,22 @@ object SchemaGen extends App with LazyLogging {
   def execute(path: String): Unit = {
     val reader = new XlsReader(path)
 
-    val listSchemas = reader.buildSchemas()
+    val listSchemas = reader.buildSchemas().filter(_.attributes.nonEmpty)
     val encryptedSchemas = listSchemas.flatMap(PostEncryptSchemaGen.buildPostEncryptionSchema)
     import YamlSerializer._
     reader.domain.foreach { d =>
       val domain = d.copy(schemas = listSchemas)
       logger.info(s"""Generated schemas:
            |${serialize(domain)}""".stripMargin)
-      serializeToFile(new File(s"${domain.name}.yml"), domain)
-      if(encryptedSchemas.nonEmpty){
+      val output_path = Settings.comet.metadata
+      serializeToFile(new File(output_path, s"${domain.name}.yml"), domain)
+      if (encryptedSchemas.nonEmpty) {
         val encryptedDomain = d.copy(schemas = encryptedSchemas)
-        serializeToFile(new File(s"${encryptedDomain.name}-encrypted.yml"), encryptedDomain)
+        serializeToFile(
+          new File(output_path, s"${encryptedDomain.name}-encrypted.yml"),
+          encryptedDomain
+        )
       }
-
 
     }
   }
