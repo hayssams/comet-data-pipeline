@@ -130,75 +130,80 @@ class XlsReader(path: String) {
   def buildSchemas(): List[Schema] = {
     schemas.map { schema =>
       val schemaName = schema.name
-      val attributes = workbook
-        .getSheet(schemaName)
-        .asScala
-        .drop(1)
-        .flatMap { row =>
-          val nameOpt = Option(row.getCell(0, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
-            .map(formatter.formatCellValue)
-          val renameOpt = Option(row.getCell(1, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
-            .map(formatter.formatCellValue)
-          val semTypeOpt = Option(row.getCell(2, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
-            .map(formatter.formatCellValue)
-          val required = Option(row.getCell(3, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
-            .map(formatter.formatCellValue)
-            .forall(_.toBoolean)
-          val privacy = Option(row.getCell(4, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
-            .map(formatter.formatCellValue)
-            .map(PrivacyLevel.fromString)
-          val metricType = Option(row.getCell(5, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
-            .map(formatter.formatCellValue)
-            .map(MetricType.fromString)
-          val defaultOpt = Option(row.getCell(6, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
-            .map(formatter.formatCellValue)
-          val commentOpt = Option(row.getCell(8, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
-            .map(formatter.formatCellValue)
+      val sheetOpt = Option(workbook.getSheet(schemaName))
+      val attributes = sheetOpt match {
+        case None => List.empty
+        case Some(sheet) =>
+          sheet.asScala
+            .drop(1)
+            .flatMap { row =>
+              val nameOpt = Option(row.getCell(0, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+                .map(formatter.formatCellValue)
+              val renameOpt = Option(row.getCell(1, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+                .map(formatter.formatCellValue)
+              val semTypeOpt = Option(row.getCell(2, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+                .map(formatter.formatCellValue)
+              val required = Option(row.getCell(3, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+                .map(formatter.formatCellValue)
+                .forall(_.toBoolean)
+              val privacy = Option(row.getCell(4, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+                .map(formatter.formatCellValue)
+                .map(PrivacyLevel.fromString)
+              val metricType = Option(row.getCell(5, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+                .map(formatter.formatCellValue)
+                .map(MetricType.fromString)
+              val defaultOpt = Option(row.getCell(6, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+                .map(formatter.formatCellValue)
+              val commentOpt = Option(row.getCell(8, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+                .map(formatter.formatCellValue)
 
-          val positionOpt = schema.metadata.flatMap(_.format) match {
-            case Some(Format.POSITION) => {
-              val positionStart = Try(row.getCell(9, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
-                .map(formatter.formatCellValue)
-                .map(_.toInt) match {
-                case Success(v) => v
-                case _          => 0
+              val positionOpt = schema.metadata.flatMap(_.format) match {
+                case Some(Format.POSITION) => {
+                  val positionStart =
+                    Try(row.getCell(9, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+                      .map(formatter.formatCellValue)
+                      .map(_.toInt) match {
+                      case Success(v) => v - 1
+                      case _          => 0
+                    }
+                  val positionEnd = Try(row.getCell(10, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+                    .map(formatter.formatCellValue)
+                    .map(_.toInt) match {
+                    case Success(v) => v - 1
+                    case _          => 0
+                  }
+                  val positionTrim =
+                    Option(row.getCell(11, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+                      .map(formatter.formatCellValue)
+                      .map(Trim.fromString)
+                  Some(Position(positionStart, positionEnd, positionTrim))
+                }
+                case _ => None
               }
-              val positionEnd = Try(row.getCell(10, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
-                .map(formatter.formatCellValue)
-                .map(_.toInt) match {
-                case Success(v) => v
-                case _          => 0
+
+              (nameOpt, semTypeOpt) match {
+                case (Some(name), Some(semType)) =>
+                  Some(
+                    Attribute(
+                      name,
+                      semType,
+                      array = None,
+                      required,
+                      privacy,
+                      comment = commentOpt,
+                      rename = renameOpt,
+                      metricType = metricType,
+                      attributes = None,
+                      position = positionOpt,
+                      default = defaultOpt,
+                      tags = None
+                    )
+                  )
+                case _ => None
               }
-              val positionTrim = Option(row.getCell(11, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
-                .map(formatter.formatCellValue)
-                .map(Trim.fromString)
-              Some(Position(positionStart, positionEnd, positionTrim))
             }
-            case _ => None
-          }
-
-          (nameOpt, semTypeOpt) match {
-            case (Some(name), Some(semType)) =>
-              Some(
-                Attribute(
-                  name,
-                  semType,
-                  array = None,
-                  required,
-                  privacy,
-                  comment = commentOpt,
-                  rename = renameOpt,
-                  metricType = metricType,
-                  attributes = None,
-                  position = positionOpt,
-                  default = defaultOpt,
-                  tags = None
-                )
-              )
-            case _ => None
-          }
-        }
-        .toList
+            .toList
+      }
       schema.copy(attributes = attributes)
     }
   }
