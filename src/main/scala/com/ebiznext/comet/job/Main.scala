@@ -26,6 +26,7 @@ import com.ebiznext.comet.job.bqload.BigQueryLoadConfig
 import com.ebiznext.comet.job.index.IndexConfig
 import com.ebiznext.comet.job.infer.InferSchemaConfig
 import com.ebiznext.comet.job.metrics.MetricsConfig
+import com.ebiznext.comet.schema.generator.SchemaGen
 import com.ebiznext.comet.utils.FileLock
 import com.ebiznext.comet.workflow.IngestionWorkflow
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -181,8 +182,8 @@ object Main extends StrictLogging {
           case _ =>
             printUsage()
         }
-
-      case _ => printUsage()
+      case "generate-yml" if arglist.length == 2 => SchemaGen.execute(arglist(1))
+      case _                                     => printUsage()
     }
   }
 }
