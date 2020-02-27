@@ -98,12 +98,7 @@ class XlsReader(path: String) {
           .map(_.toBoolean)
         val separator = Option(row.getCell(6, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
           .map(formatter.formatCellValue)
-
-        // FIXME handle quote and escape fields
-        val quote = Option(row.getCell(7, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
-          .map(formatter.formatCellValue)
-        val escape = Option(row.getCell(8, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
-          .map(formatter.formatCellValue)
+        
 
         (nameOpt, patternOpt) match {
           case (Some(name), Some(pattern)) => {
@@ -115,9 +110,7 @@ class XlsReader(path: String) {
               array = None,
               withHeader,
               separator,
-              quote,
-              escape,
-              write,
+              write = write,
               partition = None,
               index = None,
               properties = None
