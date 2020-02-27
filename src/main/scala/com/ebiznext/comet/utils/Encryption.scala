@@ -20,7 +20,7 @@ object Encryption {
 
 trait Encryption {
   def encrypt(s: String): String
-  def size : Int = 0
+  def size: Int = 0
 }
 
 object Md5 extends Encryption {
@@ -48,13 +48,13 @@ object No extends Encryption {
 }
 
 object PAN extends Encryption {
-  def encrypt(s: String): String = s
+  def encrypt(s: String): String = s.map(_ => 'X')
 
   override def size: Int = 50
 }
 
 object IBAN extends Encryption {
-  def encrypt(s: String): String = s
+  def encrypt(s: String): String = s.map(_ => 'X')
 
   override def size: Int = 50
 }
