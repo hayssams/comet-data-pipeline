@@ -5,12 +5,12 @@ import com.ebiznext.comet.utils.{IBAN, PAN}
 
 object PostEncryptSchemaGen {
 
-  val encryptedSizeOpt: String => Option[Int] = (attType: String)=> attType.toUpperCase match {
-    case "PAN" => Some(PAN.size)
-    case "IBAN" => Some(IBAN.size)
-    case _ => None
+  val encryptedSizeOpt: String => Option[Int] = (attType: String) =>
+    attType.toUpperCase match {
+      case "PAN"  => Some(PAN.size)
+      case "IBAN" => Some(IBAN.size)
+      case _      => None
   }
-
 
   /**
     * Applies a ShiftCommand on the list of Attributes as follows :
@@ -24,20 +24,25 @@ object PostEncryptSchemaGen {
     * @param shiftCommand
     * @return a new Attribute List with shifted positions
     */
-  private def shiftAttributes(attributes:List[Attribute], shiftCommand: ShiftCommand): List[Attribute] = {
-    attributes.map { attribute => {
-      val newPos = attribute.position.map {
-        case pos if pos.first == shiftCommand.start => Position(pos.first,pos.first+shiftCommand.encryptedSize-1, pos.trim)
-        case pos if pos.first > shiftCommand.start => Position(pos.first+shiftCommand.delta,pos.last+shiftCommand.delta, pos.trim)
-        case pos => pos
+  private def shiftAttributes(
+    attributes: List[Attribute],
+    shiftCommand: ShiftCommand
+  ): List[Attribute] = {
+    attributes.map { attribute =>
+      {
+        val newPos = attribute.position.map {
+          case pos if pos.first == shiftCommand.start =>
+            Position(pos.first, pos.first + shiftCommand.encryptedSize - 1, pos.trim)
+          case pos if pos.first > shiftCommand.start =>
+            Position(pos.first + shiftCommand.delta, pos.last + shiftCommand.delta, pos.trim)
+          case pos => pos
+        }
+        attribute.copy(position = newPos)
       }
-      attribute.copy(position = newPos)
-    }
     }
   }
 
-
-  case class ShiftCommand(start: Int, delta: Int, encryptedSize:Int)
+  case class ShiftCommand(start: Int, delta: Int, encryptedSize: Int)
 
   /**
     * Calculates a List of optional ShiftCommands by mapping each attribute in the input Attributes List, as follows:
@@ -46,13 +51,17 @@ object PostEncryptSchemaGen {
     * @param attributes
     * @return a List of ShiftCommands Options
     */
-   def buildShiftCommands(attributes: List[Attribute]): List[Option[ShiftCommand]] = attributes.map {
+  def buildShiftCommands(attributes: List[Attribute]): List[Option[ShiftCommand]] = attributes.map {
     att =>
-      encryptedSizeOpt(att.`type`).map{ encryptedSize =>
+      encryptedSizeOpt(att.`type`).map { encryptedSize =>
         val first = att.position.map(_.first).getOrElse(0)
         val last = att.position.map(_.last).getOrElse(0)
-        val currentSize = (last-first)+1
-        ShiftCommand(start = first,delta = encryptedSize - currentSize,encryptedSize = encryptedSize)
+        val currentSize = (last - first) + 1
+        ShiftCommand(
+          start = first,
+          delta = encryptedSize - currentSize,
+          encryptedSize = encryptedSize
+        )
       }
   }
 
@@ -62,17 +71,24 @@ object PostEncryptSchemaGen {
     * @param attributes
     * @return a new List of Attributes
     */
-  private def buildEncryptedAttributes(shiftCommands:List[Option[ShiftCommand]], attributes : List[Attribute]):List[Attribute]  = {
+  private def buildEncryptedAttributes(
+    shiftCommands: List[Option[ShiftCommand]],
+    attributes: List[Attribute]
+  ): List[Attribute] = {
     shiftCommands match {
       case Nil => attributes
-      case head :: tail => head match {
-        case Some(sc) => {
-          val shiftedAttributes = shiftAttributes(attributes,sc)
-          val updatedCommands = tail.map(maybeShiftCommand => maybeShiftCommand.map(command => command.copy(start = command.start + sc.delta)))
-          buildEncryptedAttributes(updatedCommands,shiftedAttributes)
+      case head :: tail =>
+        head match {
+          case Some(sc) => {
+            val shiftedAttributes = shiftAttributes(attributes, sc)
+            val updatedCommands = tail.map(
+              maybeShiftCommand =>
+                maybeShiftCommand.map(command => command.copy(start = command.start + sc.delta))
+            )
+            buildEncryptedAttributes(updatedCommands, shiftedAttributes)
+          }
+          case None => buildEncryptedAttributes(tail, attributes)
         }
-        case None => buildEncryptedAttributes(tail, attributes)
-      }
     }
   }
 
@@ -82,9 +98,13 @@ object PostEncryptSchemaGen {
     * @param schema
     * @return Optional Schema
     */
-  def buildPostEncryptionSchema(schema:Schema): Option[Schema] = {
-    val encryptionTypes = List("IBAN","PAN")
-    schema.metadata.flatMap(_.format).exists(Format.POSITION.equals) && schema.attributes.map(_.`type`).map(_.toUpperCase).intersect(encryptionTypes).nonEmpty match {
+  def buildPostEncryptionSchema(schema: Schema): Option[Schema] = {
+    val encryptionTypes = List("IBAN", "PAN")
+    schema.metadata.flatMap(_.format).exists(Format.POSITION.equals) && schema.attributes
+      .map(_.`type`)
+      .map(_.toUpperCase)
+      .intersect(encryptionTypes)
+      .nonEmpty match {
       case true => {
         val shiftCommands = buildShiftCommands(schema.attributes)
         val newAttributes = buildEncryptedAttributes(shiftCommands, schema.attributes)
