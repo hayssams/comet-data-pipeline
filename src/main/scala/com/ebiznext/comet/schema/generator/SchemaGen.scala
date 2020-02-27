@@ -61,7 +61,7 @@ class XlsReader(path: String) {
         .map(formatter.formatCellValue)
       val directoryOpt = Option(row.getCell(1, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
         .map(formatter.formatCellValue)
-      val ack = Option(row.getCell(2, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
+      val ack = Option(row.getCell(2, Row.MissingCellPolicy.CREATE_NULL_AS_BLANK))
         .map(formatter.formatCellValue)
       val comment = Option(row.getCell(3, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL))
         .map(formatter.formatCellValue)
