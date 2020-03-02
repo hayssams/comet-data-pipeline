@@ -1,16 +1,15 @@
 package com.ebiznext.comet.schema.generator
 
+import com.ebiznext.comet.config.Settings
 import com.ebiznext.comet.schema.model.{Attribute, Format, Position, Schema}
-import com.ebiznext.comet.utils.{IBAN, PAN}
 
 object PostEncryptSchemaGen {
 
+  val encryptionTypes: collection.Map[String, Int] =
+    Settings.comet.encryptionTypes.map(elem => (elem._1.toUpperCase, elem._2))
+
   val encryptedSizeOpt: String => Option[Int] = (attType: String) =>
-    attType.toUpperCase match {
-      case "PAN"  => Some(PAN.size)
-      case "IBAN" => Some(IBAN.size)
-      case _      => None
-  }
+    encryptionTypes.get(attType.toUpperCase)
 
   /**
     * Applies a ShiftCommand on the list of Attributes as follows :
@@ -99,11 +98,11 @@ object PostEncryptSchemaGen {
     * @return Optional Schema
     */
   def buildPostEncryptionSchema(schema: Schema): Option[Schema] = {
-    val encryptionTypes = List("IBAN", "PAN")
+    val encryptionTypesKeys = encryptionTypes.keys.toList
     schema.metadata.flatMap(_.format).exists(Format.POSITION.equals) && schema.attributes
       .map(_.`type`)
       .map(_.toUpperCase)
-      .intersect(encryptionTypes)
+      .intersect(encryptionTypesKeys)
       .nonEmpty match {
       case true => {
         val shiftCommands = buildShiftCommands(schema.attributes)

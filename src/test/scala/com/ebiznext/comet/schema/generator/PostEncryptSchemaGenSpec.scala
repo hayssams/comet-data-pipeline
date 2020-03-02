@@ -37,8 +37,13 @@ class PostEncryptSchemaGenTest extends FlatSpec with Matchers with StrictLogging
   val noEncryptionSchema = withEncryptionSchema.copy(attributes = List(a1, a3, a5))
   val nonPositionSchema = withEncryptionSchema.copy(metadata = Some(nonPositionMetadata))
 
-  "a schema of Position files with encrypted types" should "have a post encrypted schema" in {
-    PostEncryptSchemaGen.buildPostEncryptionSchema(withEncryptionSchema) shouldBe defined
+  "a schema of Position files with encrypted types" should "have a post encrypted schema with correctly shifted positions" in {
+    val postEncryptSchema = PostEncryptSchemaGen.buildPostEncryptionSchema(withEncryptionSchema)
+    postEncryptSchema shouldBe defined
+    val attributes = postEncryptSchema.map(_.attributes)
+    attributes shouldBe defined
+    attributes.head.flatMap(_.position).map(_.first) shouldBe List(0, 1, 51, 56, 106)
+    attributes.head.flatMap(_.position).map(_.last) shouldBe List(0, 50, 55, 105, 112)
   }
 
   "a shema with a format different than Position" should "not have a post encrypted schema" in {
