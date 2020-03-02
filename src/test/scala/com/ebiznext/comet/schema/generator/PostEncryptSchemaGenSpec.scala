@@ -6,26 +6,35 @@ import com.ebiznext.comet.schema.model._
 import com.typesafe.scalalogging.StrictLogging
 import org.scalatest.{FlatSpec, Matchers}
 
-class PostEncryptSchemaGenTest extends FlatSpec with Matchers with StrictLogging{
+class PostEncryptSchemaGenTest extends FlatSpec with Matchers with StrictLogging {
 
-  val p1 = Position(0,0,Some(Trim.BOTH))
-  val p2 = Position(1,5,Some(Trim.BOTH))
-  val p3 = Position(6,10,Some(Trim.BOTH))
-  val p4 = Position(11,13,Some(Trim.BOTH))
-  val p5 = Position(14,20,Some(Trim.BOTH))
+  val p1 = Position(0, 0, Some(Trim.BOTH))
+  val p2 = Position(1, 5, Some(Trim.BOTH))
+  val p3 = Position(6, 10, Some(Trim.BOTH))
+  val p4 = Position(11, 13, Some(Trim.BOTH))
+  val p5 = Position(14, 20, Some(Trim.BOTH))
 
-  val a1 = Attribute("att1",position = Some(p1))
-  val a2 = Attribute("att2",position = Some(p2),`type` = "IBAN")
-  val a3 = Attribute("att3",position = Some(p3))
-  val a4 = Attribute("att4",position = Some(p4), `type` = "PAN")
-  val a5 = Attribute("att5",position = Some(p5))
-  val attributes = List(a1,a2,a3,a4,a5)
+  val a1 = Attribute("att1", position = Some(p1))
+  val a2 = Attribute("att2", position = Some(p2), `type` = "IBAN")
+  val a3 = Attribute("att3", position = Some(p3))
+  val a4 = Attribute("att4", position = Some(p4), `type` = "PAN")
+  val a5 = Attribute("att5", position = Some(p5))
+  val attributes = List(a1, a2, a3, a4, a5)
 
-  val positionMetadata = Metadata(Some(Mode.FILE),Some(Format.POSITION))
-  val nonPositionMetadata = Metadata(Some(Mode.FILE),Some(Format.DSV))
+  val positionMetadata = Metadata(Some(Mode.FILE), Some(Format.POSITION))
+  val nonPositionMetadata = Metadata(Some(Mode.FILE), Some(Format.DSV))
 
-  val withEncryptionSchema = Schema("schemaWithEncryption",Pattern.compile("somefile.txt"),attributes,Some(positionMetadata),None,None,None,None)
-  val noEncryptionSchema = withEncryptionSchema.copy(attributes= List(a1,a3,a5))
+  val withEncryptionSchema = Schema(
+    "schemaWithEncryption",
+    Pattern.compile("somefile.txt"),
+    attributes,
+    Some(positionMetadata),
+    None,
+    None,
+    None,
+    None
+  )
+  val noEncryptionSchema = withEncryptionSchema.copy(attributes = List(a1, a3, a5))
   val nonPositionSchema = withEncryptionSchema.copy(metadata = Some(nonPositionMetadata))
 
   "a schema of Position files with encrypted types" should "have a post encrypted schema" in {
@@ -45,6 +54,6 @@ class PostEncryptSchemaGenTest extends FlatSpec with Matchers with StrictLogging
   }
 
   "a list of attributes with no encryption types" should "have an empty Shift Commands" in {
-    PostEncryptSchemaGen.buildShiftCommands(List(a1,a3,a5)).filter(_.isDefined) shouldBe empty
+    PostEncryptSchemaGen.buildShiftCommands(List(a1, a3, a5)).filter(_.isDefined) shouldBe empty
   }
 }
