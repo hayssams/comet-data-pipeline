@@ -325,7 +325,7 @@ class IngestionWorkflow(
 
   def index(job: AutoJobDesc, task: AutoTaskDesc): Unit = {
     val targetArea = task.area.getOrElse(job.getArea())
-    val targetPath = new Path(DatasetArea.path(task.domain, targetArea.value), task.dataset)
+    val targetPath = new Path(DatasetArea.path(task.domain, null), task.dataset)
     val properties = task.properties
     launchHandler.index(
       this,
@@ -355,9 +355,17 @@ class IngestionWorkflow(
     *
     * @param jobname : job name as defined in the YML file.
     */
-  def autoJob(jobname: String): Unit = {
+  def autoJobRun(jobname: String, argParams: Option[String] = None): Unit = {
     val job = schemaHandler.jobs(jobname)
-    autoJob(job)
+    val parameters: Option[Map[String, String]] = argParams
+      .map {
+        _.replaceAll("\\s", "")
+          .split("=")
+          .grouped(2)
+          .map { case Array(k, v) => k -> v }
+          .toMap
+      }
+    autoJob(job, parameters)
   }
 
   /**
@@ -365,7 +373,7 @@ class IngestionWorkflow(
     *
     * @param job : job as defined in the YML file.
     */
-  def autoJob(job: AutoJobDesc): Unit = {
+  def autoJob(job: AutoJobDesc, sqlParameters: Option[Map[String, String]]): Unit = {
     job.tasks.foreach { task =>
       val action = new AutoTask(
         job.name,
@@ -375,7 +383,8 @@ class IngestionWorkflow(
         job.udf,
         job.views,
         task,
-        storageHandler
+        storageHandler,
+        sqlParameters
       )
       action.run() match {
         case Success(_) =>

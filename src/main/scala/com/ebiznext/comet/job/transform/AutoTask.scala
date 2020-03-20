@@ -28,7 +28,7 @@ import com.ebiznext.comet.schema.model.AutoTaskDesc
 import com.ebiznext.comet.utils.SparkJob
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.{SaveMode, SparkSession}
-
+import com.ebiznext.comet.utils.Formatter._
 import scala.util.{Success, Try}
 
 /**
@@ -48,7 +48,8 @@ class AutoTask(
   udf: Option[String],
   views: Option[Map[String, String]],
   task: AutoTaskDesc,
-  storageHandler: StorageHandler
+  storageHandler: StorageHandler,
+  sqlParameters: Option[Map[String, String]]
 )(implicit val settings: Settings)
     extends SparkJob {
 
@@ -72,7 +73,13 @@ class AutoTask(
     val targetPath = task.getTargetPath(defaultArea)
     val mergePath = s"${targetPath.toString}.merge"
 
-    val dataframe = session.sql(task.sql)
+    val dataframe = sqlParameters match {
+      case Some(m) =>
+        println(task.sql.richFormat(m))
+        session.sql(task.sql.richFormat(m))
+      case _       => session.sql(task.sql)
+
+    }
     val partitionedDF =
       partitionedDatasetWriter(
         if (coalesce) dataframe.coalesce(1) else dataframe,

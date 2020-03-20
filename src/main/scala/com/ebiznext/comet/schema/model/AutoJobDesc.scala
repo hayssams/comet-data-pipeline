@@ -41,7 +41,7 @@ case class AutoTaskDesc(
   partition: Option[List[String]] = None,
   presql: Option[List[String]] = None,
   postsql: Option[List[String]] = None,
-  area: Option[StorageArea] = None,
+  area: Option[String] = None,
   index: Option[IndexSink] = None,
   properties: Option[Map[String, String]] = None
 ) {
@@ -54,12 +54,12 @@ case class AutoTaskDesc(
 
   def getTargetPath(defaultArea: StorageArea)(implicit settings: Settings): Path = {
     val targetArea = area.getOrElse(defaultArea)
-    new Path(DatasetArea.path(domain, targetArea.value), dataset)
+    new Path(DatasetArea.path(domain, defaultArea.toString), dataset)
   }
 
   def getHiveDB(defaultArea: StorageArea): String = {
     val targetArea = area.getOrElse(defaultArea)
-    StorageArea.area(domain, targetArea)
+    StorageArea.area(domain, null)
   }
 
 }
