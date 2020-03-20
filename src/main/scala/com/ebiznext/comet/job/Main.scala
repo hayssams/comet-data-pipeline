@@ -109,7 +109,7 @@ object Main extends StrictLogging {
           workflow.autoJobRun(arglist(1))
         else if (arglist.length == 3)
           workflow.autoJobRun(arglist(1), Some(arglist(2)))
-        else logger.error("Number of arguments not respected: Please check your input")
+        else logger.error(s"Number of arguments not respected: Please check your input: $arglist")
       case "import" => workflow.loadLanding()
       case "watch" =>
         if (arglist.length == 2) {

@@ -23,6 +23,7 @@ package com.ebiznext.comet.schema.handlers
 import com.ebiznext.comet.config.{DatasetArea, Settings}
 import com.ebiznext.comet.schema.model._
 import com.ebiznext.comet.utils.CometObjectMapper
+import com.fasterxml.jackson.annotation.JacksonInject
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
 import com.fasterxml.jackson.module.scala.experimental.ScalaObjectMapper
