@@ -74,9 +74,8 @@ class AutoTask(
     val mergePath = s"${targetPath.toString}.merge"
 
     val dataframe = sqlParameters match {
-      case Some(m) =>
-        println(task.sql.richFormat(m))
-        session.sql(task.sql.richFormat(m))
+      case Some(mapParams) =>
+        session.sql(task.sql.richFormat(mapParams))
       case _       => session.sql(task.sql)
 
     }

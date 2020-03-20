@@ -360,9 +360,11 @@ class IngestionWorkflow(
     val parameters: Option[Map[String, String]] = argParams
       .map {
         _.replaceAll("\\s", "")
-          .split("=")
+          .split(Array(',', '='))
           .grouped(2)
-          .map { case Array(k, v) => k -> v }
+          .map {
+            case Array(k, v) => k -> v
+          }
           .toMap
       }
     autoJob(job, parameters)
