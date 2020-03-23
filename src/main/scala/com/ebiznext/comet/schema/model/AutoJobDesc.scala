@@ -21,7 +21,7 @@
 package com.ebiznext.comet.schema.model
 
 import com.ebiznext.comet.config.{DatasetArea, Settings, StorageArea}
-import com.fasterxml.jackson.annotation.{JsonIgnore, JsonProperty}
+import com.fasterxml.jackson.annotation.JsonIgnore
 import org.apache.hadoop.fs.Path
 
 /**
