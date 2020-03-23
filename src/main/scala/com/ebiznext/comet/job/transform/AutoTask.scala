@@ -29,6 +29,7 @@ import com.ebiznext.comet.utils.SparkJob
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import com.ebiznext.comet.utils.Formatter._
+import scala.language.reflectiveCalls
 import scala.util.{Success, Try}
 
 /**
@@ -39,6 +40,7 @@ import scala.util.{Success, Try}
   * @param name        : Job Name as defined in the YML job description file
   * @param defaultArea : Where the resulting dataset is stored by default if not specified in the task
   * @param task        : Task to run
+  * @param sqlParameters : Sql Parameters to pass to SQL statements
   */
 class AutoTask(
   override val name: String,
@@ -76,7 +78,7 @@ class AutoTask(
     val dataframe = sqlParameters match {
       case Some(mapParams) =>
         session.sql(task.sql.richFormat(mapParams))
-      case _       => session.sql(task.sql)
+      case _ => session.sql(task.sql)
 
     }
     val partitionedDF =

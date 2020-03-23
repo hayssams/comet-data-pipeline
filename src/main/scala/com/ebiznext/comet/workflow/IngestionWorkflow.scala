@@ -354,6 +354,7 @@ class IngestionWorkflow(
     * Successively run each task of a job
     *
     * @param jobname : job name as defined in the YML file.
+    * @param argParams : sql parameters to pass to SQL statements.
     */
   def autoJobRun(jobname: String, argParams: Option[String] = None): Unit = {
     val job = schemaHandler.jobs(jobname)
