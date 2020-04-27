@@ -29,13 +29,13 @@ class SchemaGenSpec extends TestHelper {
 
     "a preEncryption domain" should "have only string types" in {
       domainOpt shouldBe defined
-      val preEncrypt = SchemaGen.genPreEncryptionDomain(domainOpt.get)
+      val preEncrypt = SchemaGen.genPreEncryptionDomain(domainOpt.get, Nil)
       preEncrypt.schemas.flatMap(_.attributes).filter(_.`type` != "string") shouldBe empty
     }
 
-    "a preEncryption domain" should "have not have required attributes" in {
+    "a preEncryption domain" should " not have required attributes" in {
       domainOpt shouldBe defined
-      val preEncrypt = SchemaGen.genPreEncryptionDomain(domainOpt.get)
+      val preEncrypt = SchemaGen.genPreEncryptionDomain(domainOpt.get, Nil)
       preEncrypt.schemas.flatMap(_.attributes).filter(_.required) shouldBe empty
     }
 
@@ -43,12 +43,11 @@ class SchemaGenSpec extends TestHelper {
       domainOpt shouldBe defined
       domainOpt.get.schemas
         .flatMap(_.metadata)
-        .filter(_.format.equals(Some(Format.POSITION)))
-        .size shouldBe 1
+        .count(_.format.contains(Format.POSITION)) shouldBe 1
       val postEncrypt = SchemaGen.genPostEncryptionDomain(domainOpt.get)
       postEncrypt.schemas
         .flatMap(_.metadata)
-        .filter(_.format.equals(Some(Format.POSITION))) shouldBe empty
+        .filter(_.format.contains(Format.POSITION)) shouldBe empty
     }
   }
 }
