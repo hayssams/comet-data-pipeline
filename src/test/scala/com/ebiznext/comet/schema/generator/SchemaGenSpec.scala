@@ -3,7 +3,8 @@ package com.ebiznext.comet.schema.generator
 import java.io.File
 
 import com.ebiznext.comet.TestHelper
-import com.ebiznext.comet.schema.model.{Domain, Format}
+import com.ebiznext.comet.schema.model.{Domain, Format, PrivacyLevel}
+import com.ebiznext.comet.utils.{Hide, Md5, Sha1}
 
 class SchemaGenSpec extends TestHelper {
   new WithSettings() {
@@ -31,6 +32,18 @@ class SchemaGenSpec extends TestHelper {
       domainOpt shouldBe defined
       val preEncrypt = SchemaGen.genPreEncryptionDomain(domainOpt.get, Nil)
       preEncrypt.schemas.flatMap(_.attributes).filter(_.`type` != "string") shouldBe empty
+    }
+
+    "md5 & hide privacy policies" should "be applied in the pre-encrypt step " in {
+      domainOpt shouldBe defined
+      val preEncrypt = SchemaGen.genPreEncryptionDomain(domainOpt.get, List("HIDE", "SHA1"))
+      def validCount(algo: String, count: Int) =
+        preEncrypt.schemas
+          .flatMap(_.attributes)
+          .filter(_.privacy.getOrElse(PrivacyLevel.None).toString == algo) should have length count
+      validCount("HIDE", 2)
+      validCount("MD5", 0)
+      validCount("SHA1", 1)
     }
 
     "a preEncryption domain" should " not have required attributes" in {
