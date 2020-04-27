@@ -17,56 +17,53 @@
  *
  *
  */
-package com.ebiznext.comet.job.infer
+package com.ebiznext.comet.schema.generator
 
 import buildinfo.BuildInfo
 import com.ebiznext.comet.utils.CliConfig
 import scopt.OParser
 
-case class InferSchemaConfig(
-  domainName: String = "",
-  schemaName: String = "",
-  inputPath: String = "",
-  outputPath: String = "",
-  header: Option[Boolean] = Some(false)
+/**
+  *
+  * @param files List of Excel files
+  * @param encryption Should pre & post encryption YAML be generated ?
+  * @param privacy What privacy policies are to be applied at the pre-encrypt step ? All by default.
+  */
+case class SchemaGenConfig(
+  files: Seq[String] = Nil,
+  encryption: Boolean = true,
+  privacy: Seq[String] = Nil
 )
 
-object InferSchemaConfig extends CliConfig[InferSchemaConfig] {
+object SchemaGenConfig extends CliConfig[SchemaGenConfig] {
 
-  val parser: OParser[Unit, InferSchemaConfig] = {
-    val builder = OParser.builder[InferSchemaConfig]
+  val parser: OParser[Unit, SchemaGenConfig] = {
+    val builder = OParser.builder[SchemaGenConfig]
     import builder._
     OParser.sequence(
       programName("comet"),
       head("comet", BuildInfo.version),
-      opt[String]("domain")
-        .action((x, c) => c.copy(domainName = x))
+      opt[Seq[String]]("files")
+        .action((x, c) => c.copy(files = x))
         .required()
-        .text("Domain Name"),
-      opt[String]("schema")
-        .action((x, c) => c.copy(schemaName = x))
+        .text("List of Excel files describing Domains & Schemas"),
+      opt[Boolean]("encryption")
+        .action((x, c) => c.copy(encryption = x))
         .required()
-        .text("Domain Name"),
-      opt[String]("input")
-        .action((x, c) => c.copy(inputPath = x))
-        .required()
-        .text("Input Path"),
-      opt[String]("output")
-        .action((x, c) => c.copy(outputPath = x))
-        .required()
-        .text("Output Path"),
-      opt[Option[Boolean]]("with-header")
-        .action((x, c) => c.copy(header = x))
+        .text("If true generate pre and post encryption YML"),
+      opt[Seq[String]]("privacy")
+        .action((x, c) => c.copy(privacy = x))
         .optional()
-        .text("Does the file contain a header")
+        .text("""What privacy policies should be applied in the pre-encryption phase ? 
+                | All privacy policies are applied by default.""".stripMargin)
     )
   }
 
   /**
     *
     * @param args args list passed from command line
-    * @return Option of case class InferSchemaConfig.
+    * @return Option of case class SchemaGenConfig.
     */
-  def parse(args: Seq[String]): Option[InferSchemaConfig] =
-    OParser.parse(parser, args, InferSchemaConfig())
+  def parse(args: Seq[String]): Option[SchemaGenConfig] =
+    OParser.parse(parser, args, SchemaGenConfig())
 }
