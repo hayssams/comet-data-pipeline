@@ -1,4 +1,4 @@
-package com.ebiznext.comet.job.conversion
+package com.ebiznext.comet.utils.conversion
 
 trait Convertible[A, B] extends (A => B)
 
