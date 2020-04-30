@@ -28,6 +28,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.datasources.json.JsonIngestionUtil
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{DataFrame, Encoders, Row}
+import org.apache.spark.storage.StorageLevel
 
 import scala.util.{Failure, Success, Try}
 
@@ -82,7 +83,9 @@ class JsonIngestionJob(
   def ingest(dataset: DataFrame): (RDD[_], RDD[_]) = {
     val rdd = dataset.rdd
     dataset.printSchema()
-    val checkedRDD = JsonIngestionUtil.parseRDD(rdd, schemaSparkType).cache()
+    val checkedRDD = JsonIngestionUtil
+      .parseRDD(rdd, schemaSparkType)
+      .persist(settings.comet.cacheStorageLevel)
     val acceptedRDD: RDD[String] = checkedRDD.filter(_.isRight).map(_.right.get)
     val rejectedRDD: RDD[String] =
       checkedRDD.filter(_.isLeft).map(_.left.get.mkString("\n"))

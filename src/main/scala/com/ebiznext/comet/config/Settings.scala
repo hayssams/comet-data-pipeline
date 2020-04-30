@@ -40,6 +40,7 @@ import com.typesafe.config.{Config, ConfigValueFactory}
 import com.typesafe.scalalogging.{Logger, StrictLogging}
 import configs.Configs
 import configs.syntax._
+import org.apache.spark.storage.StorageLevel
 import org.slf4j.MDC
 
 import scala.concurrent.duration.FiniteDuration
@@ -212,6 +213,8 @@ object Settings extends StrictLogging {
 
   final case class Atlas(uri: String, user: String, password: String, owner: String)
 
+  final case class Internal(cacheStorageLevel: String)
+
   /**
     *
     * @param datasets       : Absolute path, datasets root folder beneath which each area is defined.
@@ -249,8 +252,13 @@ object Settings extends StrictLogging {
     jdbcEngines: Map[String, JdbcEngine],
     atlas: Atlas,
     privacy: Privacy,
-    fileSystem: Option[String]
+    fileSystem: Option[String],
+    internal: Option[Internal]
   ) extends Serializable {
+
+    val cacheStorageLevel = internal
+      .map(__ => StorageLevel.fromString(__.cacheStorageLevel))
+      .getOrElse(StorageLevel.MEMORY_ONLY)
 
     @throws(classOf[ObjectStreamException])
     protected def writeReplace: AnyRef = {

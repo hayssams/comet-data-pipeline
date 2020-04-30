@@ -32,6 +32,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.storage.StorageLevel
 
 import scala.util.{Failure, Success, Try}
 
@@ -268,7 +269,7 @@ object DsvIngestionUtil {
             )
           }
         }
-      } cache ()
+      } persist (settings.comet.cacheStorageLevel)
 
     val rejectedRDD: RDD[String] = checkedRDD
       .filter(_.isRejected)
