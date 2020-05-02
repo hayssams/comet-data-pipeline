@@ -93,7 +93,7 @@ object Main extends App with StrictLogging {
   val domains: List[Domain] = schemaHandler.domains
 
   val arglist = args.toList
-  logger.info(s"Running Comet $arglist")
+  logger.info(s"Running Cet $arglist")
 
   ExtractScriptGenConfig.parse(args) match {
     case Some(config) =>

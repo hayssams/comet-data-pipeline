@@ -213,7 +213,7 @@ object Settings extends StrictLogging {
 
   final case class Atlas(uri: String, user: String, password: String, owner: String)
 
-  final case class Internal(cacheStorageLevel: String)
+  final case class Internal(cacheStorageLevel: StorageLevel)
 
   /**
     *
@@ -256,9 +256,7 @@ object Settings extends StrictLogging {
     internal: Option[Internal]
   ) extends Serializable {
 
-    val cacheStorageLevel = internal
-      .map(__ => StorageLevel.fromString(__.cacheStorageLevel))
-      .getOrElse(StorageLevel.MEMORY_ONLY)
+    val cacheStorageLevel = internal.map(_.cacheStorageLevel).getOrElse(StorageLevel.MEMORY_ONLY)
 
     @throws(classOf[ObjectStreamException])
     protected def writeReplace: AnyRef = {
@@ -291,6 +289,11 @@ object Settings extends StrictLogging {
   private implicit val indexSinkSettinsConfigs: Configs[IndexSinkSettings] =
     Configs.derive[IndexSinkSettings]
   private implicit val jdbcEngineConfigs: Configs[JdbcEngine] = Configs.derive[JdbcEngine]
+
+  private implicit val internalConfigs: Configs[Internal] = Configs.derive[Internal]
+
+  private implicit val storageLevelConfigs: Configs[StorageLevel] =
+    Configs[String].map(StorageLevel.fromString)
 
   def apply(config: Config): Settings = {
     val jobId = UUID.randomUUID().toString
