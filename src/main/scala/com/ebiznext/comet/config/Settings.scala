@@ -213,7 +213,7 @@ object Settings extends StrictLogging {
 
   final case class Atlas(uri: String, user: String, password: String, owner: String)
 
-  final case class Internal(cacheStorageLevel: StorageLevel)
+  final case class Internal(cacheStorageLevel: StorageLevel) {}
 
   /**
     *
@@ -290,10 +290,8 @@ object Settings extends StrictLogging {
     Configs.derive[IndexSinkSettings]
   private implicit val jdbcEngineConfigs: Configs[JdbcEngine] = Configs.derive[JdbcEngine]
 
-  private implicit val internalConfigs: Configs[Internal] = Configs.derive[Internal]
-
   private implicit val storageLevelConfigs: Configs[StorageLevel] =
-    Configs[String].map(StorageLevel.fromString)
+    Configs[String].map(StorageLevel.fromString).map(_.asInstanceOf[StorageLevel])
 
   def apply(config: Config): Settings = {
     val jobId = UUID.randomUUID().toString
