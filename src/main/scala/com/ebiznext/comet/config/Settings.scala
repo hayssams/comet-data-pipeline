@@ -196,7 +196,7 @@ object Settings extends StrictLogging {
       * @param createSql the SQL Create Table statement with the database-specific type, constraints etc. tacked on.
       * @param pingSql a cheap SQL query whose results are irrelevant but guaranteed to trigger an error in case the table is absent
       *
-      * @note pingSql is optional, and will default to `select * from $name where 1=0` as Spark SQL does
+      * @note pingSql is optional, and will default to `select * from `name`  where 1=0` as Spark SQL does
       */
     final case class TableDdl(name: String, createSql: String, pingSql: Option[String] = None) {
       def effectivePingSql: String = pingSql.getOrElse(s"select * from $name where 1=0")
@@ -318,8 +318,8 @@ final case class Settings(comet: Settings.Comet, sparkConfig: Config) {
 
   @transient
   lazy val storageHandler: HdfsStorageHandler = {
-    implicit val self
-      : Settings = this /* TODO: remove this once HdfsStorageHandler explicitly takes Settings or Settings.Comet in */
+    implicit val self: Settings =
+      this /* TODO: remove this once HdfsStorageHandler explicitly takes Settings or Settings.Comet in */
     new HdfsStorageHandler(comet.fileSystem)
   }
 
