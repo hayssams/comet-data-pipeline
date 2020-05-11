@@ -43,55 +43,62 @@ object Common {
       ) // clean and publish/launch the docker environment
     ).flatten
 
-  def cometPlugins: Seq[AutoPlugin] = Seq(
-    GitVersioning,
-    GitBranchPrompt,
-    SphinxPlugin,
-    SiteScaladocPlugin,
-    BuildInfoPlugin
-  )
+  def cometPlugins: Seq[AutoPlugin] =
+    Seq(
+      GitVersioning,
+      GitBranchPrompt,
+      SphinxPlugin,
+      SiteScaladocPlugin,
+      BuildInfoPlugin
+    )
 
-  def gitSettings = Seq(
-    git.useGitDescribe := true, {
-      val VersionRegex = "v([0-9]+.[0-9]+.[0-9]+)-?(.*)?".r
-      git.gitTagToVersionNumber := {
-        case VersionRegex(v, "")         => Some(v)
-        case VersionRegex(v, "SNAPSHOT") => Some(s"$v-SNAPSHOT")
-        case VersionRegex(v, s)          => Some(s"$v-$s-SNAPSHOT")
-        case _                           => None
+  def gitSettings =
+    Seq(
+      git.useGitDescribe := true, {
+        val VersionRegex = "v([0-9]+.[0-9]+.[0-9]+)-?(.*)?".r
+        git.gitTagToVersionNumber := {
+          case VersionRegex(v, "")         => Some(v)
+          case VersionRegex(v, "SNAPSHOT") => Some(s"$v-SNAPSHOT")
+          case VersionRegex(v, s)          => Some(s"$v-$s-SNAPSHOT")
+          case _                           => None
+        }
       }
-    }
-    //    git.gitTagToVersionNumber := { tag: String =>
+      //    git.gitTagToVersionNumber := { tag: String =>
 //      if (tag matches "[0-9]+\\..*") Some(tag)
 //      else None
 //    }
-  )
+    )
 
-  def assemlySettings = Seq(
-    test in assembly := {},
-    mainClass in Compile := Some("com.ebiznext.comet.job.Main")
-  )
+  def assemlySettings =
+    Seq(
+      test in assembly := {},
+      mainClass in Compile := Some("com.ebiznext.comet.job.Main")
+    )
 
-  def docsSettings = Seq(
-    sourceDirectory in Sphinx := baseDirectory.value / "docs"
-  )
+  def docsSettings =
+    Seq(
+      sourceDirectory in Sphinx := baseDirectory.value / "docs"
+    )
 
   def customSettings: Seq[Def.Setting[_]] =
     Seq(
+      scalacOptions in (Compile, doc) ++= Seq(
+        "-no-link-warnings" // Suppresses problems with Scaladoc @throws links
+      ),
       scalacOptions ++= Seq(
-          "-deprecation",
-          "-feature",
-          "-Xmacro-settings:materialize-derivations",
-          "-Ywarn-unused-import",
-          "-Xfatal-warnings"
-        ),
+        "-deprecation",
+        "-feature",
+        "-Xmacro-settings:materialize-derivations",
+        "-Ywarn-unused-import",
+        "-Xfatal-warnings"
+      ),
       testOptions in Test ++= Seq(
-          // show full stack traces and test case durations
-          Tests.Argument("-oDF"),
-          // -v Log "test run started" / "test started" / "test run finished" events on log level "info" instead of "debug".
-          // -a Show stack traces a nd exception class name for AssertionErrors.
-          Tests.Argument(TestFrameworks.JUnit, "-v", "-a")
-        ),
+        // show full stack traces and test case durations
+        Tests.Argument("-oDF"),
+        // -v Log "test run started" / "test started" / "test run finished" events on log level "info" instead of "debug".
+        // -a Show stack traces a nd exception class name for AssertionErrors.
+        Tests.Argument(TestFrameworks.JUnit, "-v", "-a")
+      ),
       parallelExecution in Test := false,
       scalafmtOnCompile := true
     ) ++ gitSettings ++ assemlySettings ++ docsSettings
