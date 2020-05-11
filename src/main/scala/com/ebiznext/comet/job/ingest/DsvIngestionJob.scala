@@ -130,11 +130,14 @@ class DsvIngestionJob(
           }
           df.drop(drop: _*)
         case Some(false) | None =>
-          df.toDF(
-            schema.attributes
-              .map(_.name)
-              .take(Math.min(df.columns.length, schema.attributes.length)): _*
-          )
+          val min = Math.min(df.columns.length, schema.attributes.length)
+          val cols = df.columns
+          df.select(cols.head, cols.tail.take(min - 1): _*)
+            .toDF(
+              schema.attributes
+                .map(_.name)
+                .take(min): _*
+            )
       }
       Success(resDF)
     } catch {
@@ -235,6 +238,7 @@ object DsvIngestionUtil {
     val checkedRDD: RDD[RowResult] = dataset.rdd.mapPartitions { partition =>
         partition.map { row: Row =>
           val rowValues: Seq[(String, Attribute)] = row.toSeq
+            .take(attributes.length)
             .zip(attributes)
             .map {
               case (colValue, colAttribute) =>
