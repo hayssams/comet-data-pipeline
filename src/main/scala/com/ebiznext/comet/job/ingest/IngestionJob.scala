@@ -103,21 +103,22 @@ trait IngestionJob extends SparkJob {
     val writeMode = getWriteMode()
     val acceptedPath = new Path(DatasetArea.accepted(domain.name), schema.name)
     val mergedDF = schema.merge.map { mergeOptions =>
-        if (storageHandler.exists(new Path(acceptedPath, "_SUCCESS"))) {
-          val existingDF = session.read.parquet(acceptedPath.toString)
-          merge(acceptedDF, existingDF, mergeOptions)
-        } else
-          acceptedDF
-      } getOrElse acceptedDF
+      if (storageHandler.exists(new Path(acceptedPath, "_SUCCESS"))) {
+        val existingDF = session.read.parquet(acceptedPath.toString)
+        merge(acceptedDF, existingDF, mergeOptions)
+      } else
+        acceptedDF
+    } getOrElse acceptedDF
 
-    saveRows(mergedDF, acceptedPath, writeMode, StorageArea.accepted, schema.merge.isDefined)
+    val savedDataset =
+      saveRows(mergedDF, acceptedPath, writeMode, StorageArea.accepted, schema.merge.isDefined)
 
     if (settings.comet.metrics.active) {
       new MetricsJob(this.domain, this.schema, Stage.GLOBAL, storageHandler, schemaHandler)
         .run()
         .get
     }
-    (mergedDF, acceptedPath)
+    (savedDataset, acceptedPath)
   }
 
   def index(mergedDF: DataFrame): Unit = {
@@ -226,13 +227,13 @@ trait IngestionJob extends SparkJob {
         .select(partitionedInputDF.columns.map((col(_))): _*)
 
     val toDeleteDF = merge.timestamp.map { timestamp =>
-        val w = Window.partitionBy(merge.key.head, merge.key.tail: _*).orderBy(col(timestamp).desc)
-        import org.apache.spark.sql.functions.row_number
-        commonDF
-          .withColumn("rownum", row_number.over(w))
-          .where(col("rownum") =!= 1)
-          .drop("rownum")
-      } getOrElse commonDF
+      val w = Window.partitionBy(merge.key.head, merge.key.tail: _*).orderBy(col(timestamp).desc)
+      import org.apache.spark.sql.functions.row_number
+      commonDF
+        .withColumn("rownum", row_number.over(w))
+        .where(col("rownum") =!= 1)
+        .drop("rownum")
+    } getOrElse commonDF
 
     val updatesDF = merge.delete
       .map(condition => partitionedInputDF.filter(s"not ($condition)"))
@@ -262,7 +263,7 @@ trait IngestionJob extends SparkJob {
     writeMode: WriteMode,
     area: StorageArea,
     merge: Boolean
-  ): (DataFrameWriter[Row], String) = {
+  ): DataFrame = {
     if (dataset.columns.length > 0) {
       val saveMode = writeMode.toSaveMode
       val hiveDB = StorageArea.area(domain.name, area)
@@ -293,9 +294,7 @@ trait IngestionJob extends SparkJob {
           val minFraction =
             if (fraction * count >= 1) // Make sure we get at least on item in teh dataset
               fraction
-            else if (
-              count > 0
-            ) // We make sure we get at least 1 item which is 2 because of double imprecision for huge numbers.
+            else if (count > 0) // We make sure we get at least 1 item which is 2 because of double imprecision for huge numbers.
               2 / count
             else
               0
@@ -315,12 +314,10 @@ trait IngestionJob extends SparkJob {
       }
 
       // No need to apply partition on rejected dF
-      val partitionedDF =
-        if (
-          area == StorageArea.rejected && !metadata
-            .getPartitionAttributes()
-            .forall(Metadata.CometPartitionColumns.contains(_))
-        )
+      val partitionedDFWriter =
+        if (area == StorageArea.rejected && !metadata
+              .getPartitionAttributes()
+              .forall(Metadata.CometPartitionColumns.contains(_)))
           partitionedDatasetWriter(dataset.coalesce(nbPartitions), Nil)
         else
           partitionedDatasetWriter(
@@ -329,24 +326,31 @@ trait IngestionJob extends SparkJob {
           )
 
       val mergePath = s"${targetPath.toString}.merge"
-      val targetDataset = if (merge && area != StorageArea.rejected) {
-        partitionedDF
+      val (targetDatasetWriter, finalDataset) = if (merge && area != StorageArea.rejected) {
+        logger.info(s"Saving Dataset to merge location $mergePath")
+        partitionedDFWriter
           .mode(SaveMode.Overwrite)
           .format(settings.comet.writeFormat)
           .option("path", mergePath)
           .save()
-        partitionedDatasetWriter(
-          session.read.parquet(mergePath.toString),
-          metadata.getPartitionAttributes()
+        logger.info(s"reading Dataset from merge location $mergePath")
+        val mergedDataset = session.read.parquet(mergePath)
+        (
+          partitionedDatasetWriter(
+            mergedDataset,
+            metadata.getPartitionAttributes()
+          ),
+          mergedDataset
         )
       } else
-        partitionedDF
-      val targetDatasetWriter = targetDataset
+        (partitionedDFWriter, dataset)
+      val finalTargetDatasetWriter = targetDatasetWriter
         .mode(saveMode)
         .format(settings.comet.writeFormat)
         .option("path", targetPath.toString)
+      logger.info(s"Saving Dataset to final location $targetPath")
       if (settings.comet.hive) {
-        targetDatasetWriter.saveAsTable(fullTableName)
+        finalTargetDatasetWriter.saveAsTable(fullTableName)
         val tableComment = schema.comment.getOrElse("")
         session.sql(s"ALTER TABLE $fullTableName SET TBLPROPERTIES ('comment' = '$tableComment')")
         if (settings.comet.analyze) {
@@ -365,15 +369,16 @@ trait IngestionJob extends SparkJob {
             }
         }
       } else {
-        targetDatasetWriter.save()
+        finalTargetDatasetWriter.save()
       }
       storageHandler.delete(new Path(mergePath))
       if (merge && area != StorageArea.rejected)
         logger.info(s"deleted merge file $mergePath")
-      (targetDataset, mergePath)
+      finalDataset
     } else {
       logger.warn("Empty dataset with no columns won't be saved")
-      (null, null)
+      import session.implicits._
+      session.emptyDataFrame
     }
   }
 
@@ -385,7 +390,9 @@ trait IngestionJob extends SparkJob {
   def run(): Try[SparkSession] = {
     domain.checkValidity(schemaHandler) match {
       case Left(errors) =>
-        val errs = errors.reduce { (errs, err) => errs + "\n" + err }
+        val errs = errors.reduce { (errs, err) =>
+          errs + "\n" + err
+        }
         Failure(throw new Exception(errs))
       case Right(_) =>
         val start = Timestamp.from(Instant.now())
