@@ -24,7 +24,7 @@ object BigQueryUtils {
     sparkType match {
       case BooleanType                                     => StandardSQLTypeName.BOOL
       case ByteType | LongType | IntegerType               => StandardSQLTypeName.INT64
-      case DoubleType | FloatType                          => StandardSQLTypeName.NUMERIC
+      case DoubleType | FloatType                          => StandardSQLTypeName.FLOAT64
       case StringType                                      => StandardSQLTypeName.STRING
       case BinaryType                                      => StandardSQLTypeName.BYTES
       case DateType                                        => StandardSQLTypeName.DATE

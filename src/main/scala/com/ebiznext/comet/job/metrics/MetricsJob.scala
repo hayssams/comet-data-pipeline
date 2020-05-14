@@ -176,18 +176,18 @@ root
     val continuousSchema = StructType(
       Array(
         StructField("attribute", StringType, false),
-        StructField("min", LongType, false),
-        StructField("max", LongType, false),
+        StructField("min", DoubleType, false),
+        StructField("max", DoubleType, false),
         StructField("mean", DoubleType, false),
         StructField("missingValues", LongType, false),
         StructField("variance", DoubleType, false),
         StructField("standardDev", DoubleType, false),
-        StructField("sum", LongType, false),
+        StructField("sum", DoubleType, false),
         StructField("skewness", DoubleType, false),
-        StructField("kurtosis", LongType, false),
-        StructField("percentile25", LongType, false),
-        StructField("median", LongType, false),
-        StructField("percentile75", LongType, false),
+        StructField("kurtosis", DoubleType, false),
+        StructField("percentile25", DoubleType, false),
+        StructField("median", DoubleType, false),
+        StructField("percentile75", DoubleType, false),
         StructField("cometMetric", StringType, false)
       )
     )
@@ -276,9 +276,6 @@ root
         None
     }
      */
-    discreteDataset.foreach(_.printSchema())
-    continuousDataset.foreach(_.printSchema())
-
     val emptyContinuousDataset =
       session.createDataFrame(new java.util.ArrayList[Row](), continuousSchema)
     val emptyDiscreteDataset =
@@ -400,19 +397,21 @@ root
     import com.google.cloud.bigquery.{Schema => BQSchema}
     import com.ebiznext.comet.utils.conversion.BigQueryUtils._
     import com.ebiznext.comet.utils.conversion.syntax._
-    val config = BigQueryLoadConfig(
-      Right(metricsDf),
-      outputDataset = bqDataset,
-      outputTable = "metrics",
-      None,
-      "parquet",
-      "CREATE_IF_NEEDED",
-      "WRITE_APPEND",
-      None,
-      None
-    )
-    val res = new BigQueryLoadJob(config, Some(metricsDf.to[BQSchema])).run()
-    Utils.logFailure(res, logger)
+    if (metricsDf.count() > 0) {
+      val config = BigQueryLoadConfig(
+        Right(metricsDf),
+        outputDataset = bqDataset,
+        outputTable = "metrics",
+        None,
+        "parquet",
+        "CREATE_IF_NEEDED",
+        "WRITE_APPEND",
+        None,
+        None
+      )
+      val res = new BigQueryLoadJob(config, Some(metricsDf.to[BQSchema])).run()
+      Utils.logFailure(res, logger)
+    }
   }
 
   private implicit val memsideEncoder: Encoder[MetricRecord] = Encoders.product[MetricRecord]
