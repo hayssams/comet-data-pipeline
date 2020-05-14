@@ -175,20 +175,20 @@ root
      */
     val continuousSchema = StructType(
       Array(
-        StructField("attribute", StringType, false),
-        StructField("min", DoubleType, false),
-        StructField("max", DoubleType, false),
-        StructField("mean", DoubleType, false),
-        StructField("missingValues", LongType, false),
-        StructField("variance", DoubleType, false),
-        StructField("standardDev", DoubleType, false),
-        StructField("sum", DoubleType, false),
-        StructField("skewness", DoubleType, false),
-        StructField("kurtosis", DoubleType, false),
-        StructField("percentile25", DoubleType, false),
-        StructField("median", DoubleType, false),
-        StructField("percentile75", DoubleType, false),
-        StructField("cometMetric", StringType, false)
+        StructField("attribute", StringType),
+        StructField("min", DoubleType),
+        StructField("max", DoubleType),
+        StructField("mean", DoubleType),
+        StructField("missingValues", LongType),
+        StructField("variance", DoubleType),
+        StructField("standardDev", DoubleType),
+        StructField("sum", DoubleType),
+        StructField("skewness", DoubleType),
+        StructField("kurtosis", DoubleType),
+        StructField("percentile25", DoubleType),
+        StructField("median", DoubleType),
+        StructField("percentile75", DoubleType),
+        StructField("cometMetric", StringType)
       )
     )
 
@@ -196,23 +196,22 @@ root
       List("countDistinct", "catCountFreq", "missingValuesDiscrete")
     val discreteSchema = StructType(
       Array(
-        StructField("attribute", StringType, false),
-        StructField("countDistinct", LongType, false),
+        StructField("attribute", StringType),
+        StructField("countDistinct", LongType),
         StructField(
           "catCountFreq",
           ArrayType(
             StructType(
               Array(
-                StructField("category", StringType, false),
-                StructField("countDiscrete", LongType, false),
-                StructField("frequency", DoubleType, false)
+                StructField("category", StringType),
+                StructField("countDiscrete", LongType),
+                StructField("frequency", DoubleType)
               )
             )
-          ),
-          false
+          )
         ),
-        StructField("missingValuesDiscrete", LongType, false),
-        StructField("cometMetric", StringType, false)
+        StructField("missingValuesDiscrete", LongType),
+        StructField("cometMetric", StringType)
       )
     )
 
@@ -342,14 +341,16 @@ root
 
     val combinedResult = allMetricsDfMaybe match {
       case Some(allMetricsDf) =>
+        settings.comet.internal.foreach(in => allMetricsDf.persist(in.cacheStorageLevel))
         val lockedPath = lockPath(settings.comet.metrics.path)
         val waitTimeMillis = settings.comet.lock.metricsTimeout
         val locker = new FileLock(lockedPath, storageHandler)
 
+        val metricsSinkResult = sinkMetrics(allMetricsDf)
+
         val metricsResult = locker.tryExclusively(waitTimeMillis) {
           save(allMetricsDf, savePath)
         }
-        val metricsSinkResult = sinkMetrics(allMetricsDf)
 
         for {
           _ <- metricsResult
@@ -409,7 +410,11 @@ root
         None,
         None
       )
-      val res = new BigQueryLoadJob(config, Some(metricsDf.to[BQSchema])).run()
+      // Do not pass the schema here. Not that we do not compute the schema correctly
+      // But since we are having a record of repeated field BQ does not like
+      // the way we pass the schema. BQ needs an extra "list" subfield for repeated fields
+      // So let him determine teh schema by himself or risk tonot to be able to append the metrics
+      val res = new BigQueryLoadJob(config).run()
       Utils.logFailure(res, logger)
     }
   }
