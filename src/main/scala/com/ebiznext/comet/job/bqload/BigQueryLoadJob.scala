@@ -1,18 +1,13 @@
 package com.ebiznext.comet.job.bqload
 
-import java.util.UUID
-
 import com.ebiznext.comet.config.Settings
 import com.ebiznext.comet.utils.conversion.BigQueryUtils._
 import com.ebiznext.comet.utils.conversion.syntax._
 import com.ebiznext.comet.utils.{SparkJob, Utils}
-import com.google.cloud.bigquery.JobInfo.{CreateDisposition, WriteDisposition}
-import com.google.cloud.bigquery.TimePartitioning.Type
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper
 import com.google.cloud.bigquery.{Schema => BQSchema, _}
 import com.google.cloud.hadoop.io.bigquery.BigQueryConfiguration
 import com.google.cloud.hadoop.io.bigquery.output.BigQueryTimePartitioning
-import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
 import scala.util.Try
