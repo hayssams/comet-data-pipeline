@@ -230,6 +230,7 @@ object Settings extends StrictLogging {
     * @param airflow        : Airflow end point. Should be defined even if simple launccher is used instead of airflow.
     */
   final case class Comet(
+    tmpdir: String,
     jobId: String,
     datasets: String,
     metadata: String,
