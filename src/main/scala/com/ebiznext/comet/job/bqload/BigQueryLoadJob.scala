@@ -1,13 +1,18 @@
 package com.ebiznext.comet.job.bqload
 
+import java.util.UUID
+
 import com.ebiznext.comet.config.Settings
 import com.ebiznext.comet.utils.conversion.BigQueryUtils._
 import com.ebiznext.comet.utils.conversion.syntax._
 import com.ebiznext.comet.utils.{SparkJob, Utils}
+import com.google.cloud.bigquery.JobInfo.{CreateDisposition, WriteDisposition}
+import com.google.cloud.bigquery.TimePartitioning.Type
 import com.google.cloud.bigquery.testing.RemoteBigQueryHelper
 import com.google.cloud.bigquery.{Schema => BQSchema, _}
 import com.google.cloud.hadoop.io.bigquery.BigQueryConfiguration
 import com.google.cloud.hadoop.io.bigquery.output.BigQueryTimePartitioning
+import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
 import scala.util.Try
@@ -31,7 +36,7 @@ class BigQueryLoadJob(
 
   val tableId = TableId.of(cliConfig.outputDataset, cliConfig.outputTable)
 
-  def getOrCreateDataset(): Dataset = {
+  private def getOrCreateDataset(): Dataset = {
     val datasetId = DatasetId.of(projectId, cliConfig.outputDataset)
     val dataset = scala.Option(bigquery.getDataset(datasetId))
     dataset.getOrElse {
@@ -55,7 +60,7 @@ class BigQueryLoadJob(
           case _ =>
             cliConfig.outputPartition match {
               case Some(_) => StandardTableDefinition.of(df.to[BQSchema]).toBuilder
-              case None       => StandardTableDefinition.newBuilder()
+              case None    => StandardTableDefinition.newBuilder()
             }
         }
 
@@ -153,7 +158,7 @@ class BigQueryLoadJob(
       val stdTableDefinition =
         bigquery.getTable(table.getTableId).getDefinition.asInstanceOf[StandardTableDefinition]
       logger.info(
-        s"BigQuery Saving ${sourceDF.count()} rows to  ${table.getTableId} containing ${stdTableDefinition.getNumRows} rows"
+        s"BigQuery Saving to  ${table.getTableId} containing ${stdTableDefinition.getNumRows} rows"
       )
       sourceDF.write
         .mode(SaveMode.Append)
@@ -179,5 +184,4 @@ class BigQueryLoadJob(
     val res = runBQSparkConnector()
     Utils.logFailure(res, logger)
   }
-
 }
