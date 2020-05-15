@@ -346,11 +346,11 @@ root
         val waitTimeMillis = settings.comet.lock.metricsTimeout
         val locker = new FileLock(lockedPath, storageHandler)
 
-        val metricsSinkResult = sinkMetrics(allMetricsDf)
-
         val metricsResult = locker.tryExclusively(waitTimeMillis) {
           save(allMetricsDf, savePath)
         }
+
+        val metricsSinkResult = sinkMetrics(allMetricsDf)
 
         for {
           _ <- metricsResult
@@ -395,9 +395,6 @@ root
   }
 
   private def sinkMetricsToBigQuery(metricsDf: DataFrame, bqDataset: String): Unit = {
-    import com.google.cloud.bigquery.{Schema => BQSchema}
-    import com.ebiznext.comet.utils.conversion.BigQueryUtils._
-    import com.ebiznext.comet.utils.conversion.syntax._
     if (metricsDf.count() > 0) {
       val config = BigQueryLoadConfig(
         Right(metricsDf),
