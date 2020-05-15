@@ -293,8 +293,8 @@ root
       }
 
     val result = coupleDataMetrics
-      .map(tupleDataMetric =>
-        generateFullMetric(tupleDataMetric._1, tupleDataMetric._2, neededColList)
+      .map(
+        tupleDataMetric => generateFullMetric(tupleDataMetric._1, tupleDataMetric._2, neededColList)
       )
       .reduce(_ union _)
       .withColumn("domain", lit(domain.name))
@@ -436,61 +436,6 @@ root
 
         val converter = MetricRecord.MetricRecordConverter()
 
-        /*
-        object FieldIndices {
-          val domain: Int = metricsDf.schema.fieldIndex("domain")
-          val schema: Int = metricsDf.schema.fieldIndex("schema")
-          val min: Int = metricsDf.schema.fieldIndex("min")
-          val max: Int = metricsDf.schema.fieldIndex("max")
-          val mean: Int = metricsDf.schema.fieldIndex("mean")
-          val missingValues: Int = metricsDf.schema.fieldIndex("missingValues")
-          val standardDev: Int = metricsDf.schema.fieldIndex("standardDev")
-          val variance: Int = metricsDf.schema.fieldIndex("variance")
-          val sum: Int = metricsDf.schema.fieldIndex("sum")
-          val skewness: Int = metricsDf.schema.fieldIndex("skewness")
-          val kurtosis: Int = metricsDf.schema.fieldIndex("kurtosis")
-          val percentile25: Int = metricsDf.schema.fieldIndex("percentile25")
-          val median: Int = metricsDf.schema.fieldIndex("median")
-          val percentile75: Int = metricsDf.schema.fieldIndex("percentile75")
-          val category: Int = metricsDf.schema.fieldIndex("category")
-          val countDistinct: Int = metricsDf.schema.fieldIndex("countDistinct")
-          val countByCategory: Int = metricsDf.schema.fieldIndex("countByCategory")
-          val frequencies: Int = metricsDf.schema.fieldIndex("frequencies")
-          val missingValuesDiscrete: Int = metricsDf.schema.fieldIndex("missingValuesDiscrete")
-          val count: Int = metricsDf.schema.fieldIndex("count")
-          val cometTime: Int = metricsDf.schema.fieldIndex("cometTime")
-          val cometStage: Int = metricsDf.schema.fieldIndex("cometStage")
-        }
-
-        val sqlableMetricsDf = metricsDf.map { (row: Row) =>
-          val memSide = MetricRecord(
-            row.getAs[String](FieldIndices.domain),
-            row.getAs[String](FieldIndices.schema),
-            row.getAs[Option[Long]](FieldIndices.min),
-            row.getAs[Option[Long]](FieldIndices.max),
-            row.getAs[Option[Double]](FieldIndices.mean),
-            row.getAs[Option[Long]](FieldIndices.missingValues),
-            row.getAs[Option[Double]](FieldIndices.standardDev),
-            row.getAs[Option[Double]](FieldIndices.variance),
-            row.getAs[Option[Long]](FieldIndices.sum),
-            row.getAs[Option[Double]](FieldIndices.skewness),
-            row.getAs[Option[Long]](FieldIndices.kurtosis),
-            row.getAs[Option[Long]](FieldIndices.percentile25),
-            row.getAs[Option[Long]](FieldIndices.median),
-            row.getAs[Option[Long]](FieldIndices.percentile75),
-            row.getAs[Option[Seq[String]]](FieldIndices.category),
-            row.getAs[Option[Long]](FieldIndices.countDistinct),
-            row.getAs[Option[Seq[Map[String, Option[Long]]]]](FieldIndices.countByCategory),
-            row.getAs[Option[Seq[Map[String, Option[Long]]]]](FieldIndices.frequencies),
-            row.getAs[Option[Long]](FieldIndices.missingValuesDiscrete),
-            row.getAs[Long](FieldIndices.count),
-            row.getAs[Long](FieldIndices.cometTime),
-            row.getAs[String](FieldIndices.cometStage)
-          )
-
-          converter.toSqlCompatible(memSide)
-        }
-         */
         val sqlableMetricsDf = metricsDf.as[MetricRecord].map(converter.toSqlCompatible)
 
         sqlableMetricsDf.write
