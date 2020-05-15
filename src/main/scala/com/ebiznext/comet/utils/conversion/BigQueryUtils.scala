@@ -36,6 +36,7 @@ object BigQueryUtils {
 
   /**
     *
+    * Compute BigQuery Schema from Spark or PArquet Schema while Schema.bqSchema compute it from YMl File
     * @param schema Spark DataType
     * @return
     */
