@@ -75,7 +75,7 @@ object Utils {
     * @param attempt
     * @param logger the logger onto which to log results
     * @tparam T
-    * @return the original [[attempt]] with no alteration (everything happens as a side effect)
+    * @return the original `attempt` with no alteration (everything happens as a side effect)
     */
   def logFailure[T](attempt: Try[T], logger: Logger): Try[T] =
     attempt match {
