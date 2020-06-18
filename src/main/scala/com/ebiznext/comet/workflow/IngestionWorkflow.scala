@@ -203,7 +203,6 @@ class IngestionWorkflow(
   }
 
   /**
-    *
     * @param domainName : Domaine name
     * @return resolved && unresolved schemas / path
     */
@@ -232,7 +231,6 @@ class IngestionWorkflow(
 
   /**
     * Ingest the file (called by the cron manager at ingestion time for a specific dataset
-    *
     */
   def ingest(config: IngestConfig): Unit = {
     val domainName = config.domain
