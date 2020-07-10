@@ -32,7 +32,7 @@ object ScriptGen extends StrictLogging {
     * @param scriptTemplateFile The script template
     * @param scriptsOutputPath Where the scripts are produced
     * @param defaultDeltaColumn Defaut delta column
-    * @param deltaColumns Mapping table name -> delta column
+    * @param deltaColumns Mapping table name -> delta column, has precedence over `defaultDeltaColumn`
     * @return The list of produced files
     */
   def generate(

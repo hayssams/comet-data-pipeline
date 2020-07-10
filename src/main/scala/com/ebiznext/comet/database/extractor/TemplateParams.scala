@@ -64,7 +64,8 @@ object TemplateParams {
     * @param domain               The domain
     * @param scriptsOutputFolder  Where the scripts are produced
     * @param defaultDeltaColumn   The default delta column to use
-    * @param deltaColumns         A table name -> delta column to use mapping (if needing a special delta column for a given table)
+    * @param deltaColumns         A table name -> delta column to use mapping (if needing a special delta column for a given table).
+    *                             Has precedence over `defaultDeltaColumn`.
     * @return
     */
   def fromDomain(
