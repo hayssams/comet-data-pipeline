@@ -32,7 +32,7 @@ object SchemaGen extends LazyLogging {
           else
             attr.copy(`type` = "string", required = false, privacy = None)
         }
-      val newMetaData: Option[Metadata] = s.metadata.map { m => m.copy(partition = None) }
+      val newMetaData: Option[Metadata] = s.metadata.map { m => m.copy(partition = None).copy(sink = None) }
       s.copy(attributes = newAtt)
         .copy(metadata = newMetaData)
         .copy(merge = None)
@@ -85,7 +85,7 @@ object SchemaGen extends LazyLogging {
       schema.copy(
         metadata = metadata,
         attributes = attributes,
-        pattern = Pattern.compile(s"${schema.name}.csv")
+        pattern = Pattern.compile(s"${schema.name}.*.csv")
       )
     }
     val postEncryptDomain = domain.copy(schemas = postEncryptSchemas)
