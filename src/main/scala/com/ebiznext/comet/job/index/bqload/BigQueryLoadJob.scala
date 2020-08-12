@@ -200,6 +200,15 @@ class BigQueryLoadJob(
               .option("datePartition", partitionStr)
               .save()
           )
+
+        case ("WRITE_TRUNCATE", None) =>
+          logger.info(s"Overwriting BQ Table $bqTable")
+          sourceDF.write
+            .mode(SaveMode.Overwrite)
+            .format("com.google.cloud.spark.bigquery")
+            .option("table", bqTable)
+            .save()
+
         case _ =>
           logger.info(s"Saving BQ Table $bqTable")
           sourceDF.write
