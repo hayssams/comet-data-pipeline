@@ -398,7 +398,7 @@ class IngestionWorkflow(
             case Some(SinkType.ES) if settings.comet.elasticsearch.active =>
               esload(job, task)
             case Some(SinkType.BQ) =>
-              val (createDisposition, writeDisposition) = Utils.getDBDisposition(task.write)
+              val (createDisposition, writeDisposition) = Utils.getDBDisposition(task.write, hasMergeKeyDefined = false)
               val sink = task.getSink().asInstanceOf[BigQuerySink]
               val source = maybeDataFrame
                 .map(df => Right(setNullableStateOfColumn(df, nullable = true)))
