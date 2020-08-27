@@ -200,7 +200,6 @@ class BigQueryLoadJob(
               .option("datePartition", partitionStr)
               .save()
           )
-
         case _ =>
           logger.info(s"Saving BQ Table $bqTable")
           sourceDF.write
